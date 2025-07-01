@@ -12,4 +12,8 @@ make px4_sitl_default gz_standard_vtol
   <altitude>10.0</altitude>
 </spherical_coordinates>
 
+#로봇항공기 대회 위치 >> 위도35.06919095325408  경도128.08606072986328
+
+
+
 
