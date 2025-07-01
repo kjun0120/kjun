@@ -1,0 +1,15 @@
+#vtol 불러오기
+cd ~/PX4-Autopilot
+make px4_sitl_default gz_standard_vtol
+
+
+#QGC초기 위치 변환(시용하는 월드 sdf파일에 추가)
+<spherical_coordinates>
+  <surface_model>EARTH_WGS84</surface_model>
+  <world_frame_orientation>ENU</world_frame_orientation>
+  <latitude_deg>47.397742</latitude_deg>
+  <longitude_deg>8.545594</longitude_deg>
+  <altitude>10.0</altitude>
+</spherical_coordinates>
+
+
