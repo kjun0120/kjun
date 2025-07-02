@@ -159,3 +159,6 @@ def main(args=None):
 # 직접 실행할 경우 main() 함수 호출
 if __name__ == '__main__':
     main()
+
+
+#.launch.py 로 변경 고려 필요
