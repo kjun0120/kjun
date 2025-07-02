@@ -1,0 +1,161 @@
+# ROS 2를 사용하기 위한 Python 클라이언트 라이브러리를 가져온다
+import rclpy
+
+# ROS 2 노드를 만들기 위한 Node 클래스를 가져온다
+from rclpy.node import Node
+
+# PX4와 통신하기 위한 VehicleCommand 메시지 타입을 가져온다
+from px4_msgs.msg import VehicleCommand
+
+# 명령 타이밍을 제어하기 위한 time 라이브러리를 가져온다
+import time
+
+# 자율 비행을 수행할 클래스를 정의한다. ROS 2의 Node를 상속받는다
+class VTOLMissionNode(Node):
+    def __init__(self):
+        # 노드 초기화: 노드 이름은 'vtol_mission_node'로 설정
+        super().__init__('vtol_mission_node')
+
+        # 퍼블리셔 생성: PX4에 VehicleCommand 메시지를 보내기 위해 사용
+        self.publisher_ = self.create_publisher(VehicleCommand, '/fmu/vehicle_command', 10)
+
+        # 1초마다 timer_callback 함수를 주기적으로 호출
+        self.timer = self.create_timer(1.0, self.timer_callback)
+
+        # 현재 상태를 저장하는 변수: 상태 번호를 기반으로 비행 단계를 나눈다
+        self.state = 0
+
+        # 마지막 명령을 보낸 시간을 저장 (시간 간격 제어에 사용)
+        self.last_command_time = time.time()
+
+        # 현재 상태에서 명령을 이미 보냈는지를 확인하는 플래그
+        self.sent = False
+
+        # 미션에 사용될 경유지(Waypoints) 리스트: (이름, 위도, 경도, 고도)로 구성됨
+        self.waypoints = [
+            ('takeoff', 35.06919095325408, 128.08606072986328, 15),
+            ('wp1', 35.069081359950346, 128.08622098022627, 20),
+            ('wp2', 35.068719833160344, 128.08683558919387, 20),
+            ('wp3', 35.06743692105997, 128.08717486716128, 20),
+            ('wp4', 35.06843331656012, 128.08813088013784, 20),
+            ('wp2_return', 35.068719833160344, 128.08683558919387, 20),
+            ('rescue', 35.06949912196006, 128.08637177459477, 5),
+            ('drop', 35.06890791418471, 128.08545950489426, 5),
+        ]
+
+    # 타이머에 의해 주기적으로 실행되는 함수
+    def timer_callback(self):
+        # 모든 미션을 완료한 경우 노드를 종료
+        if self.state >= len(self.waypoints) + 2:
+            self.get_logger().info('✅ Mission complete.')
+            return
+
+        # 현재 시간 측정 (경과 시간 판단용)
+        current_time = time.time()
+
+        # 상태 0: 이륙 명령을 보냄
+        if self.state == 0 and not self.sent:
+            self.takeoff()
+            self.sent = True
+
+        # 상태 1: wp1로 이동 명령 (5초 기다린 후 전송)
+        elif self.state == 1 and current_time - self.last_command_time > 5:
+            self.send_waypoint(*self.waypoints[1])
+            self.sent = True
+
+        # 상태 2: 고정익 전환 명령 (10초 후 실행)
+        elif self.state == 2 and current_time - self.last_command_time > 10:
+            self.transition_to_fixed_wing()
+            self.sent = True
+
+        # 상태 3~6: wp2 → wp4 → wp2_return 이동 (각 10초 간격)
+        elif 3 <= self.state <= 6 and current_time - self.last_command_time > 10:
+            self.send_waypoint(*self.waypoints[self.state - 1])
+            self.sent = True
+
+        # 상태 7: 멀티콥터 모드로 전환
+        elif self.state == 7 and current_time - self.last_command_time > 10:
+            self.transition_to_multicopter()
+            self.sent = True
+
+        # 상태 8: 구조 지점으로 이동
+        elif self.state == 8 and current_time - self.last_command_time > 10:
+            self.send_waypoint(*self.waypoints[6])
+            self.sent = True
+
+        # 상태 9: 드롭 지점으로 이동
+        elif self.state == 9 and current_time - self.last_command_time > 10:
+            self.send_waypoint(*self.waypoints[7])
+            self.sent = True
+
+        # 상태 10: 착륙 명령
+        elif self.state == 10 and current_time - self.last_command_time > 10:
+            self.land()
+            self.sent = True
+
+        # 그 외: 상태가 바뀌었거나 명령이 끝난 후 다음 단계로 넘어감 (12초 대기)
+        elif current_time - self.last_command_time > 12:
+            self.state += 1
+            self.last_command_time = current_time
+            self.sent = False
+
+    # 이륙 명령 함수
+    def takeoff(self):
+        cmd = self.make_command(22)  # 22 = VEHICLE_CMD_NAV_TAKEOFF
+        cmd.param7 = 15.0  # 이륙 고도 설정
+        self.publisher_.publish(cmd)
+        self.get_logger().info('🚀 Sent takeoff command.')
+
+    # 착륙 명령 함수
+    def land(self):
+        cmd = self.make_command(21)  # 21 = VEHICLE_CMD_NAV_LAND
+        self.publisher_.publish(cmd)
+        self.get_logger().info('🛬 Sent land command.')
+
+    # 고정익으로 전환하는 명령
+    def transition_to_fixed_wing(self):
+        cmd = self.make_command(3000)  # 3000 = VEHICLE_CMD_DO_VTOL_TRANSITION
+        cmd.param1 = 1.0  # 1.0 = FIXED_WING
+        self.publisher_.publish(cmd)
+        self.get_logger().info('✈️ Transitioning to FIXED-WING.')
+
+    # 멀티콥터로 전환하는 명령
+    def transition_to_multicopter(self):
+        cmd = self.make_command(3000)
+        cmd.param1 = 0.0  # 0.0 = MULTICOPTER
+        self.publisher_.publish(cmd)
+        self.get_logger().info('🌀 Transitioning to MULTICOPTER.')
+
+    # 특정 위치(위도, 경도, 고도)로 이동하는 명령
+    def send_waypoint(self, name, lat, lon, alt):
+        cmd = self.make_command(16)  # 16 = VEHICLE_CMD_NAV_WAYPOINT
+        cmd.param5 = lat   # 경도
+        cmd.param6 = lon   # 위도
+        cmd.param7 = alt   # 고도
+        self.publisher_.publish(cmd)
+        self.get_logger().info(f'📍 Sent waypoint {name}: {lat}, {lon}, {alt}')
+
+    # PX4 명령 메시지를 생성하는 공통 함수
+    def make_command(self, command_type):
+        cmd = VehicleCommand()
+        # 현재 시간을 마이크로초 단위로 설정
+        cmd.timestamp = int(self.get_clock().now().nanoseconds / 1000)
+        cmd.command = command_type  # 명령 종류
+        cmd.target_system = 1       # 타겟 시스템 ID
+        cmd.target_component = 1    # 타겟 컴포넌트 ID
+        cmd.source_system = 1       # 출발 시스템 ID
+        cmd.source_component = 1    # 출발 컴포넌트 ID
+        cmd.from_external = True    # 외부에서 보낸 명령임을 표시
+        return cmd
+
+# 이 스크립트의 메인 진입점
+def main(args=None):
+    rclpy.init(args=args)  # ROS 2 초기화
+    node = VTOLMissionNode()  # 위에서 정의한 노드 클래스 생성
+    rclpy.spin(node)  # 노드를 실행하면서 콜백 함수를 계속 돌림
+    node.destroy_node()  # 종료 시 노드 삭제
+    rclpy.shutdown()  # ROS 2 종료
+
+# 직접 실행할 경우 main() 함수 호출
+if __name__ == '__main__':
+    main()
