@@ -2,6 +2,13 @@
 cd ~/PX4-Autopilot
 make px4_sitl_default gz_standard_vtol
 
+cd ~/PX4-Autopilot
+make clean
+make px4_sitl_default gazebo-classic
+
+
+
+
 
 #QGC초기 위치 변환(시용하는 월드 sdf파일에 추가)
 <spherical_coordinates>
