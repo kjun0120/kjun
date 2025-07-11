@@ -1,2 +1,6 @@
+cd ~/PX4-Autopilot
+make px4_sitl_default gz_standard_vtol
+
+
 
 ros2 launch mavros px4.launch fcu_url:=udp://:14540@localhost:14557
