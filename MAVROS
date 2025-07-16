@@ -1,3 +1,7 @@
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$HOME/.gz/fuel/models
+
+
+
 cd ~/PX4-Autopilot
 make px4_sitl_default gz_standard_vtol
 
@@ -10,3 +14,6 @@ ros2 launch gps_navigator navigator.launch.py
 
 #천이상태 확인
 ros2 topic echo /mavros/extended_state
+
+
+
