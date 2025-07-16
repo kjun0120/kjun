@@ -2,6 +2,9 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$HOME/.gz/fuel/models
 export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:/home/kjun/models
 
 
+echo $GZ_SIM_RESOURCE_PATH
+
+
 
 cd ~/PX4-Autopilot
 make px4_sitl_default gz_standard_vtol
