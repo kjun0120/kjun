@@ -1,5 +1,6 @@
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$HOME/.gz/fuel/models
-export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:/home/kjun/models
+
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$HOME/.gz/fuel/models
 
 
 echo $GZ_SIM_RESOURCE_PATH
