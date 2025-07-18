@@ -23,6 +23,9 @@ colcon build --packages-select gps_navigator yolo_landing_detector
 source install/setup.bash
 ros2 launch gps_navigator navigator.launch.py
 
+ros gazebo bridge
+ros2 run ros_gz_bridge parameter_bridge \
+/world/competition/model/vtol/link/camera_link/sensor/imager/image@sensor_msgs/msg/Image[gz.msgs.Image
 
 
 
