@@ -17,6 +17,16 @@ colcon build --packages-select gps_navigator
 source install/setup.bash
 ros2 launch gps_navigator navigator.launch.py
 
+
+cd ~/ros2_ws
+colcon build --packages-select gps_navigator yolo_landing_detector
+source install/setup.bash
+ros2 launch gps_navigator navigator.launch.py
+
+
+
+
+
 #천이상태 확인
 ros2 topic echo /mavros/extended_state
 
