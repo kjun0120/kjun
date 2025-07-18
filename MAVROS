@@ -27,6 +27,7 @@ ros gazebo bridge
 ros2 run ros_gz_bridge parameter_bridge \
 /world/competition/model/vtol/link/camera_link/sensor/imager/image@sensor_msgs/msg/Image[gz.msgs.Image
 
+ros2 run ros_gz_image image_bridge /world/default/model/standard_vtol_0/link/camera_link/sensor/imager/image
 
 
 
