@@ -29,6 +29,12 @@ colcon build --packages-select gps_navigator yolo_detector mission_controller
 source install/setup.bash
 ros2 launch gps_navigator full_flight.launch.py
 
+cd ~/ros2_ws
+colcon build --packages-select bringup
+source install/setup.bash
+ros2 launch bringup full_flight.launch.py
+
+
 
 ros gazebo bridge
 ros2 run ros_gz_bridge parameter_bridge \
